@@ -7,6 +7,8 @@
     NSString* discoverPeripherialCallbackId;
     NSMutableDictionary* connectCallbacks;
     NSMutableDictionary *readCallbacks;
+    NSMutableDictionary *readValueCallbacks;
+    NSMutableDictionary *discoverDescriptorsCallbacks;
     NSMutableDictionary *writeCallbacks;
     NSMutableDictionary *readRSSICallbacks;
     NSMutableDictionary *retrieveServicesCallbacks;

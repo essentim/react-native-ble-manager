@@ -606,6 +606,58 @@ BleManager.isPeripheralConnected('XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX', [])
 
 ```
 
+### discoverDescriptors(peripheralId, serviceUUID, characteristicUUID) [iOS only]
+Retrieve the list charateristics's descriptor UUIDs.  
+Returns a `Promise` object.
+
+__Arguments__
+- `peripheralId` - `String` - the id/mac address of the peripheral.
+- `serviceUUID` - `String` - the uuid of the service.
+- `characteristicUUID` - `String` - the uuid of the characteristic.
+
+__Examples__
+```js
+BleManager.discoverDescriptors(
+  'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX',
+  'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX',
+  'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX',
+  )
+  .then((descriptors) => {
+    // Success code
+    console.log('Descriptors:', descriptors);
+    /*
+    ['XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX','XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX']
+     */
+  });
+```
+
+### readValue(peripheralId, serviceUUID, characteristicUUID, descriptorUUID)
+Read the current value of the specified descriptor. You can retrieve the available
+descriptor UUIDs with `discoverDescriptors`.  
+Returns a `Promise` object.
+
+__Arguments__
+- `peripheralId` - `String` - the id/mac address of the peripheral.
+- `serviceUUID` - `String` - the UUID of the service.
+- `characteristicUUID` - `String` - the UUID of the characteristic.
+- `descriptorUUID` - `String` - the UUID of the characteristic.
+
+__Examples__
+```js
+BleManager.readValue('XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX', 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX', 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX', 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX')
+  .then((readData) => {
+    // Success code
+    console.log('ReadValue: ' + readData);
+
+    const buffer = Buffer.from(readData);    //https://github.com/feross/buffer#convert-arraybuffer-to-buffer
+    const descriptorData = buffer.readUInt8(1, true);
+  })
+  .catch((error) => {
+    // Failure code
+    console.log(error);
+  });
+```
+
 ## Events
 ### BleManagerStopScan
 The scanning for peripherals is ended.

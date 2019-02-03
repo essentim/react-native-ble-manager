@@ -20,6 +20,18 @@ class BleManager  {
     });
   }
 
+  readValue(peripheralId, serviceUUID, characteristicUUID, descriptorUUID) {
+    return new Promise((fulfill, reject) => {
+      bleManager.readValue(peripheralId, serviceUUID, characteristicUUID, descriptorUUID, (error, data) => {
+        if (error) {
+          reject(error);
+        } else {
+          fulfill(data);
+        }
+      });
+    });
+  }
+
   readRSSI(peripheralId) {
     return new Promise((fulfill, reject) => {
       bleManager.readRSSI(peripheralId, (error, rssi) => {
@@ -47,6 +59,18 @@ class BleManager  {
   retrieveServices(peripheralId, services) {
     return new Promise((fulfill, reject) => {
       bleManager.retrieveServices(peripheralId, services, (error, peripheral) => {
+        if (error) {
+          reject(error);
+        } else {
+          fulfill(peripheral);
+        }
+      });
+    });
+  }
+
+  discoverDescriptors(peripheralId, serviceUUID, characteristicUUID) {
+    return new Promise((fulfill, reject) => {
+      bleManager.discoverDescriptors(peripheralId, serviceUUID, characteristicUUID, (error, peripheral) => {
         if (error) {
           reject(error);
         } else {
