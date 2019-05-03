@@ -113,6 +113,18 @@ class BleManager  {
     });
   }
 
+  writeValue(peripheralId, serviceUUID, characteristicUUID, descriptorUUID, data) {
+    return new Promise((fulfill, reject) => {
+      bleManager.writeValue(peripheralId, serviceUUID, characteristicUUID, descriptorUUID, data, (error) => {
+        if (error) {
+          reject(error);
+        } else {
+          fulfill();
+        }
+      });
+    });
+  }
+
   connect(peripheralId) {
     return new Promise((fulfill, reject) => {
       bleManager.connect(peripheralId, (error) => {

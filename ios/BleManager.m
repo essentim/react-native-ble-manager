@@ -32,6 +32,7 @@ bool hasListeners;
         readRSSICallbacks = [NSMutableDictionary new];
         retrieveServicesCallbacks = [NSMutableDictionary new];
         writeCallbacks = [NSMutableDictionary new];
+        writeValueCallbacks = [NSMutableDictionary new];
         writeQueue = [NSMutableArray array];
         notificationCallbacks = [NSMutableDictionary new];
         stopNotificationCallbacks = [NSMutableDictionary new];
@@ -614,6 +615,47 @@ RCT_EXPORT_METHOD(read:(NSString *)deviceUUID serviceUUID:(NSString*)serviceUUID
 
 }
 
+RCT_EXPORT_METHOD(writeValue:(NSString *)deviceUUID serviceUUID:(NSString*)serviceUUID  characteristicUUID:(NSString*)characteristicUUID descriptorUUID:(NSString *)descriptorUUID message:(NSArray*)message callback:(nonnull RCTResponseSenderBlock)callback)
+{
+    NSLog(@"WriteValue");
+
+    BLECommandContext *context = [self getData:deviceUUID serviceUUIDString:serviceUUID characteristicUUIDString:characteristicUUID prop:CBCharacteristicPropertyWrite callback:callback];
+
+    unsigned long c = [message count];
+    uint8_t *bytes = malloc(sizeof(*bytes) * c);
+
+    unsigned i;
+    for (i = 0; i < c; i++)
+    {
+        NSNumber *number = [message objectAtIndex:i];
+        int byte = [number intValue];
+        bytes[i] = byte;
+    }
+    NSData *dataMessage = [NSData dataWithBytesNoCopy:bytes length:c freeWhenDone:YES];
+
+    if (context) {
+        CBPeripheral *peripheral = [context peripheral];
+        CBCharacteristic *characteristic = [context characteristic];
+
+        CBDescriptor *descriptor = [self getDescriptor:characteristic descriptorUUID:descriptorUUID];
+        if (!descriptor) {
+            NSString* err = [NSString stringWithFormat:@"Could not find descriptor with UUID %@ on characteristic with UUID %@ on service with UUID %@ on peripheral with UUID %@", descriptorUUID, characteristicUUID,serviceUUID, deviceUUID];
+            NSLog(@"Could not find descriptor with UUID %@ on characteristic with UUID %@ on service with UUID %@ on peripheral with UUID %@",
+                  descriptorUUID, characteristicUUID,serviceUUID, deviceUUID);
+            callback(@[err]);
+            return;
+        }
+
+        NSString *key = [self keyForPeripheral: peripheral andCharacteristic:characteristic andDescriptor:descriptor];
+        [writeValueCallbacks setObject:callback forKey:key];
+
+        // callback sends value
+        RCTLogInfo(@"Message to write(%lu): %@ ", (unsigned long)[dataMessage length], [dataMessage hexadecimalString]);
+        [peripheral writeValue:dataMessage forDescriptor:descriptor];
+
+    }
+}
+
 RCT_EXPORT_METHOD(readValue:(NSString *)deviceUUID serviceUUID:(NSString*)serviceUUID  characteristicUUID:(NSString*)characteristicUUID descriptorUUID:(NSString *)descriptorUUID callback:(nonnull RCTResponseSenderBlock)callback)
 {
     NSLog(@"readValue");
@@ -799,6 +841,24 @@ RCT_EXPORT_METHOD(requestMTU:(NSString *)deviceUUID mtu:(NSInteger)mtu callback:
 
 }
 
+- (void)peripheral:(CBPeripheral *)peripheral didWriteValueForDescriptor:(CBDescriptor *)descriptor error:(NSError *)error {
+    NSLog(@"didWriteValue");
+
+    NSString *key = [self keyForPeripheral: peripheral andCharacteristic:descriptor.characteristic andDescriptor:descriptor];
+    RCTResponseSenderBlock writeValueCallback = [writeValueCallbacks objectForKey:key];
+
+    if (writeValueCallback) {
+        if (error) {
+            NSLog(@"%@", error);
+            [writeValueCallbacks removeObjectForKey:key];
+            writeValueCallback(@[error.localizedDescription]);
+        } else {
+            [writeValueCallbacks removeObjectForKey:key];
+            writeValueCallback(@[]);
+        }
+    }
+
+}
 
 - (void)peripheral:(CBPeripheral*)peripheral didReadRSSI:(NSNumber*)rssi error:(NSError*)error {
     NSLog(@"didReadRSSI %@", rssi);
@@ -876,6 +936,17 @@ RCT_EXPORT_METHOD(requestMTU:(NSString *)deviceUUID mtu:(NSInteger)mtu callback:
         }
     }
 
+    NSArray* ourReadValueCallbacks = readValueCallbacks.allKeys;
+    for (id key in ourReadValueCallbacks) {
+        if ([key hasPrefix:peripheralUUIDString]) {
+            RCTResponseSenderBlock callback = [readValueCallbacks objectForKey:key];
+            if (callback) {
+                callback(@[errorStr]);
+                [readValueCallbacks removeObjectForKey:key];
+            }
+        }
+    }
+
     NSArray* ourWriteCallbacks = writeCallbacks.allKeys;
     for (id key in ourWriteCallbacks) {
         if ([key hasPrefix:peripheralUUIDString]) {
@@ -886,6 +957,17 @@ RCT_EXPORT_METHOD(requestMTU:(NSString *)deviceUUID mtu:(NSInteger)mtu callback:
             }
         }
     }
+
+        NSArray* ourWriteValueCallbacks = writeValueCallbacks.allKeys;
+        for (id key in ourWriteValueCallbacks) {
+            if ([key hasPrefix:peripheralUUIDString]) {
+                RCTResponseSenderBlock callback = [writeValueCallbacks objectForKey:key];
+                if (callback) {
+                    callback(@[errorStr]);
+                    [writeValueCallbacks removeObjectForKey:key];
+                }
+            }
+        }
 
     NSArray* ourNotificationCallbacks = notificationCallbacks.allKeys;
     for (id key in ourNotificationCallbacks) {
