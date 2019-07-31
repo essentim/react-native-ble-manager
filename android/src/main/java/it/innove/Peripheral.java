@@ -398,6 +398,9 @@ public class Peripheral extends BluetoothGattCallback {
 	@Override
 	public void onDescriptorWrite(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
 		super.onDescriptorWrite(gatt, descriptor, status);
+		// accept only if callback is for notification descriptor
+		// if (descriptor.getUuid().compareTo(UUIDHelper.uuidFromString(CHARACTERISTIC_NOTIFICATION_CONFIG)) == 0
+		//		&& registerNotifyCallback != null) {
 		if (registerNotifyCallback != null) {
 			if (status == BluetoothGatt.GATT_SUCCESS) {
 				registerNotifyCallback.invoke();
