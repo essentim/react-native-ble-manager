@@ -418,7 +418,8 @@ public class Peripheral extends BluetoothGattCallback {
 		super.onDescriptorRead(gatt, descriptor, status);
 		if (readValueCallback != null) {
 			if (status == BluetoothGatt.GATT_SUCCESS) {
-				readValueCallback.invoke();
+				byte[] dataValue = descriptor.getValue();
+				readValueCallback.invoke(null, BleManager.bytesToWritableArray(dataValue));
 				Log.d(BleManager.LOG_TAG, "onDescriptorRead success");
 			} else {
 				readValueCallback.invoke("Error reading descriptor stats=" + status, null);
@@ -595,7 +596,7 @@ public class Peripheral extends BluetoothGattCallback {
 		readValueCallback = callback;
 		if (!gatt.readDescriptor(descriptor)) {
 			readValueCallback = null;
-			callback.invoke("Read failed", null);
+			callback.invoke("Read Value failed", null);
 		}
 	}
 
