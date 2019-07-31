@@ -646,6 +646,47 @@ public class Peripheral extends BluetoothGattCallback {
 		gatt.discoverServices();
 	}
 
+	public void getDescriptors(UUID serviceUUID, UUID characteristicUUID, Callback callback) {
+		if (!isConnected()) {
+			callback.invoke("Device is not connected", null);
+			return;
+		}
+		if (gatt == null) {
+			callback.invoke("BluetoothGatt is null", null);
+			return;
+		}
+
+		BluetoothGattService service = gatt.getService(serviceUUID);
+		BluetoothGattCharacteristic characteristic = findReadableCharacteristic(service, characteristicUUID);
+
+		if (characteristic == null) {
+			callback.invoke("Characteristic " + characteristicUUID + " not found.", null);
+			return;
+		}
+
+		try {
+			WritableArray descriptorsArray = Arguments.createArray();
+			for (BluetoothGattDescriptor descriptor : characteristic.getDescriptors()) {
+				WritableMap descriptorMap = Arguments.createMap();
+				descriptorMap.putString("uuid", UUIDHelper.uuidToString(descriptor.getUuid()));
+				if (descriptor.getValue() != null) {
+					byte[] dataValue = descriptor.getValue();
+					descriptorMap.putArray("value", BleManager.bytesToWritableArray(dataValue));
+				} else {
+					descriptorMap.putArray("value", null);
+				}
+
+				if (descriptor.getPermissions() > 0) {
+					descriptorMap.putMap("permissions", Helper.decodePermissions(descriptor));
+				}
+				descriptorsArray.pushMap(descriptorMap);
+			}
+
+			callback.invoke(null, descriptorsArray);
+		} catch (Exception err) {
+			callback.invoke(err);
+		}
+	}
 
 	// Some peripherals re-use UUIDs for multiple characteristics so we need to check the properties
 	// and UUID of all characteristics instead of using service.getCharacteristic(characteristicUUID)

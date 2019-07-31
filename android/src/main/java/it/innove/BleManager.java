@@ -367,6 +367,16 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
 			callback.invoke("Peripheral not found", null);
 	}
 
+	@ReactMethod
+	public void discoverDescriptors(String deviceUUID, String serviceUUID, String characteristicUUID, Callback callback) {
+		Log.d(LOG_TAG, "Discovering descriptors from: " + deviceUUID);
+		Peripheral peripheral = peripherals.get(deviceUUID);
+		if (peripheral != null) {
+			peripheral.getDescriptors(UUIDHelper.uuidFromString(serviceUUID), UUIDHelper.uuidFromString(characteristicUUID), callback);
+		} else
+			callback.invoke("Peripheral not found", null);
+	}
+
 
 	@ReactMethod
 	public void refreshCache(String deviceUUID, Callback callback) {
