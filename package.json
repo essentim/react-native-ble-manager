@@ -27,5 +27,8 @@
   "scripts": {
     "version": "git add -A",
     "postversion": "git push && git push --tags"
+  },
+  "dependencies": {
+    "react-native": "^0.59.10"
   }
 }
