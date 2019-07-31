@@ -19,7 +19,7 @@ android {
 	buildToolsVersion safeExtGet("buildToolsVersion", "28.0.3")
 
 	defaultConfig {
-		minSdkVersion safeExtGet("minSdkVersion", 19)
+		minSdkVersion safeExtGet("minSdkVersion", 21)
 	}
 	lintOptions {
 		abortOnError false
