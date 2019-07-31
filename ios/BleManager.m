@@ -357,6 +357,23 @@ RCT_EXPORT_METHOD(start:(NSDictionary *)options callback:(nonnull RCTResponseSen
 RCT_EXPORT_METHOD(scan:(NSArray *)serviceUUIDStrings timeoutSeconds:(nonnull NSNumber *)timeoutSeconds allowDuplicates:(BOOL)allowDuplicates options:(nonnull NSDictionary*)scanningOptions callback:(nonnull RCTResponseSenderBlock)callback)
 {
     NSLog(@"scan with timeout %@", timeoutSeconds);
+    
+    // Clear the peripherals before scanning again, otherwise cannot connect again after disconnection
+    // Only clear peripherals that are not connected - otherwise connections fail silently (without any
+    // onDisconnect* callback).
+    @synchronized(peripherals) {
+      NSMutableArray *connectedPeripherals = [NSMutableArray array];
+      for (CBPeripheral *peripheral in peripherals) {
+          if (([peripheral state] != CBPeripheralStateConnected) &&
+              ([peripheral state] != CBPeripheralStateConnecting)) {
+              [connectedPeripherals addObject:peripheral];
+          }
+      }
+      for (CBPeripheral *p in connectedPeripherals) {
+          [peripherals removeObject:p];
+      }
+    }
+
     NSArray * services = [RCTConvert NSArray:serviceUUIDStrings];
     NSMutableArray *serviceUUIDs = [NSMutableArray new];
     NSDictionary *options = nil;
@@ -383,6 +400,9 @@ RCT_EXPORT_METHOD(stopScan:(nonnull RCTResponseSenderBlock)callback)
         self.scanTimer = nil;
     }
     [manager stopScan];
+    if (hasListeners) {
+        [self sendEventWithName:@"BleManagerStopScan" body:@{}];
+    }
     callback(@[[NSNull null]]);
 }
 
