@@ -689,7 +689,7 @@ public class Peripheral extends BluetoothGattCallback {
 		readRSSICallback = callback;
 
 		if (!gatt.readRemoteRssi()) {
-			readCallback = null;
+			readRSSICallback = null;
 			callback.invoke("Read RSSI failed", null);
 		}
 	}
