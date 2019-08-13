@@ -341,8 +341,7 @@ class BleManager extends ReactContextBaseJavaModule implements ActivityEventList
   				decoded[i] = new Integer(message.getInt(i)).byteValue();
   			}
   			Log.d(LOG_TAG, "Message(" + decoded.length + "): " + bytesToHex(decoded));
-			callback.invoke("Not Implemeted");
-  			// peripheral.writeValue(UUIDHelper.uuidFromString(serviceUUID), UUIDHelper.uuidFromString(characteristicUUID), UUIDHelper.uuidFromString(descriptorUUID), decoded, callback);
+  			peripheral.writeValue(UUIDHelper.uuidFromString(serviceUUID), UUIDHelper.uuidFromString(characteristicUUID), UUIDHelper.uuidFromString(descriptorUUID), decoded, callback);
   		} else
   			callback.invoke("Peripheral not found");
   	}
