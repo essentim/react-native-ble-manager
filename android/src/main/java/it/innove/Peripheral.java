@@ -41,7 +41,8 @@ import static com.facebook.react.common.ReactConstants.TAG;
 public class Peripheral extends BluetoothGattCallback {
 
 	private static final String CHARACTERISTIC_NOTIFICATION_CONFIG = "00002902-0000-1000-8000-00805f9b34fb";
-
+	private static final int CONNECTION_ATTEMPTS = 5;
+	private static final int CONNECTION_ATTEMPT_DELAY = 200;
 	private final BluetoothDevice device;
 	protected byte[] advertisingDataBytes = new byte[0];
 	protected int advertisingRSSI;
@@ -51,6 +52,8 @@ public class Peripheral extends BluetoothGattCallback {
 	private BluetoothGatt gatt;
 
 	private Callback connectCallback;
+	private Activity connectActivity;
+	private int connectRetries = 0;
 	private Callback retrieveServicesCallback;
 	private Callback readCallback;
 	private Callback readValueCallback;
@@ -94,6 +97,7 @@ public class Peripheral extends BluetoothGattCallback {
 		if (!connected) {
 			BluetoothDevice device = getDevice();
 			this.connectCallback = callback;
+			this.connectActivity = activity;
 			if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 				Log.d(BleManager.LOG_TAG, " Is Or Greater than M $mBluetoothDevice");
 				gatt = device.connectGatt(activity, false, this, BluetoothDevice.TRANSPORT_LE);
@@ -123,6 +127,7 @@ public class Peripheral extends BluetoothGattCallback {
 
 	public void disconnect(boolean force) {
 		connectCallback = null;
+		connectActivity = null;
 		connected = false;
 		if (gatt != null) {
 			try {
@@ -266,6 +271,7 @@ public class Peripheral extends BluetoothGattCallback {
 		if (newState == BluetoothProfile.STATE_CONNECTED) {
 
 			connected = true;
+			connectRetries = 0;
 
 			new Handler(Looper.getMainLooper()).post(new Runnable() {
 				@Override
@@ -284,6 +290,22 @@ public class Peripheral extends BluetoothGattCallback {
 				Log.d(BleManager.LOG_TAG, "Connected to: " + device.getAddress());
 				connectCallback.invoke();
 				connectCallback = null;
+				connectActivity = null;
+			}
+
+		} else if (status == 0x85 // error 133
+				&& newState == BluetoothProfile.STATE_DISCONNECTED
+				&& connectRetries < CONNECTION_ATTEMPTS) {
+			connectRetries++;
+			Log.d(BleManager.LOG_TAG, "got error " + status + " while connecting. retry #" + connectRetries);
+			// close and cleanup connection
+			if (gatt != null) { gatt.close(); }
+			try {
+				Thread.sleep(CONNECTION_ATTEMPT_DELAY);
+				this.connect(connectCallback, connectActivity);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+				Log.d(BleManager.LOG_TAG, "got error while delayed retry: " + e.getMessage());
 			}
 
 		} else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
@@ -298,6 +320,8 @@ public class Peripheral extends BluetoothGattCallback {
 				}
 			}
 
+			connectRetries = 0;
+
 			sendConnectionEvent(device, "BleManagerDisconnectPeripheral", status);
 			List<Callback> callbacks = Arrays.asList(writeCallback, writeValueCallback, retrieveServicesCallback, readRSSICallback, readCallback, readValueCallback, registerNotifyCallback, requestMTUCallback);
 			for (Callback currentCallback : callbacks) {
@@ -308,6 +332,7 @@ public class Peripheral extends BluetoothGattCallback {
 			if (connectCallback != null) {
 				connectCallback.invoke("Connection error");
 				connectCallback = null;
+				connectActivity = null;
 			}
 			writeCallback = null;
 			writeValueCallback = null;
