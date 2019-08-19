@@ -142,7 +142,18 @@ bool hasListeners;
     if (readCallback != NULL) {
         NSMutableArray *descriptors = [NSMutableArray new];
         for (CBDescriptor *descriptor in characteristic.descriptors) {
-          [descriptors addObject: descriptor.UUID.UUIDString];
+            NSMutableDictionary *descriptorDict = [[NSMutableDictionary alloc] init];
+            [descriptorDict setObject:descriptor.UUID.UUIDString forKey:@"uuid"];
+            [descriptorDict setObject:characteristic.UUID.UUIDString forKey:@"characteristic"];
+            [descriptorDict setObject:characteristic.service.UUID.UUIDString forKey:@"service"];
+            
+            if (([descriptor.value isKindOfClass: [NSData class]]) && ([descriptor.value length] > 0)) {
+                NSString *valueAsString = [[NSString alloc] initWithData:[descriptor.value toArray] encoding:NSASCIIStringEncoding];
+                [descriptorDict setObject:valueAsString forKey:@"value"];
+            } else {
+                [descriptorDict setObject:[NSNull null] forKey:@"value"];
+            }
+            [descriptors addObject: descriptorDict];
         }
         readCallback(@[[NSNull null], descriptors]);
         [discoverDescriptorsCallbacks removeObjectForKey:key];
