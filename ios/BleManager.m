@@ -147,12 +147,19 @@ bool hasListeners;
             [descriptorDict setObject:characteristic.UUID.UUIDString forKey:@"characteristic"];
             [descriptorDict setObject:characteristic.service.UUID.UUIDString forKey:@"service"];
             
+            /* skip returning value since error occured:
+             * -[BleManager peripheral:didDiscoverDescriptorsForCharacteristic:error:] (in react_native_ble_manager) (BleManager.m:151)
+             * Terminating app due to uncaught exception 'NSInvalidArgumentException', reason: '-[__NSArrayM bytes]: unrecognized
+             * selector sent to instance 0x281c...
+             * check converting to String representation...
+             
             if (([descriptor.value isKindOfClass: [NSData class]]) && ([descriptor.value length] > 0)) {
                 NSString *valueAsString = [[NSString alloc] initWithData:[descriptor.value toArray] encoding:NSASCIIStringEncoding];
                 [descriptorDict setObject:valueAsString forKey:@"value"];
             } else {
                 [descriptorDict setObject:[NSNull null] forKey:@"value"];
             }
+             */
             [descriptors addObject: descriptorDict];
         }
         readCallback(@[[NSNull null], descriptors]);
