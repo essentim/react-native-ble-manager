@@ -10,8 +10,6 @@ import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.os.Build;
-import android.os.Handler;
-import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.util.Base64;
 import android.util.Log;
@@ -272,7 +270,8 @@ public class Peripheral extends BluetoothGattCallback {
 
 			connected = true;
 			connectRetries = 0;
-
+			/*
+			Do not disconver services automatically, since retrieveServices is called anyway after connect...
 			new Handler(Looper.getMainLooper()).post(new Runnable() {
 				@Override
 				public void run() {
@@ -283,7 +282,7 @@ public class Peripheral extends BluetoothGattCallback {
 					}
 				}
 			});
-
+			*/
 			sendConnectionEvent(device, "BleManagerConnectPeripheral", status);
 
 			if (connectCallback != null) {
@@ -928,6 +927,7 @@ public class Peripheral extends BluetoothGattCallback {
 
 	@Override
 	public void onMtuChanged(BluetoothGatt gatt, int mtu, int status) {
+		Log.d(BleManager.LOG_TAG, "onMtuChanged: " + mtu + "("+status+")");
 		super.onMtuChanged(gatt, mtu, status);
 		if (requestMTUCallback != null) {
 			if (status == BluetoothGatt.GATT_SUCCESS) {
