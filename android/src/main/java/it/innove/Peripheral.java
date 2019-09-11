@@ -262,7 +262,7 @@ public class Peripheral extends BluetoothGattCallback {
 	@Override
 	public void onConnectionStateChange(BluetoothGatt gatta, int status, int newState) {
 
-		Log.d(BleManager.LOG_TAG, "onConnectionStateChange to " + newState + " on peripheral: " + device.getAddress() + " with status" + status);
+		Log.d(BleManager.LOG_TAG, "onConnectionStateChange to " + newState + " on peripheral: " + (device != null ? device.getAddress() : "undefined" ) + " with status " + status);
 
 		this.gatt = gatta;
 
@@ -460,6 +460,7 @@ public class Peripheral extends BluetoothGattCallback {
 	@Override
 	public void onDescriptorRead(BluetoothGatt gatt, BluetoothGattDescriptor descriptor, int status) {
 		super.onDescriptorRead(gatt, descriptor, status);
+		Log.d(BleManager.LOG_TAG, "onDescriptorRead received");
 		if (readValueCallback != null) {
 			if (status == BluetoothGatt.GATT_SUCCESS) {
 				byte[] dataValue = descriptor.getValue();
